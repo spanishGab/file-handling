@@ -12,9 +12,12 @@ from .common.constants import CONSTANTS
 
 
 class NotAFileError(Exception):
-    # TODO: Finalizar definição
-    def __init__(self, file_name: str, message: str="The file name "):
-        super().__init__(f"The given name '{file_name}' is a directory")
+    def __init__(
+        self,
+        message: str = "The given file name doesn't repressent a file."
+    ):
+        super().__init__(message)
+
 
 class File(ABC):
 
@@ -32,8 +35,10 @@ class File(ABC):
 
         self._file = Path(os.path.join(self.directory_path,
                                        self.full_name))
-        if self._file.is_dir():
-            raise 
+
+        if self._file.exists():
+            self.__check_file_integrity()
+
         self._full_path = self._file.absolute()
 
     @property
@@ -116,8 +121,8 @@ class File(ABC):
     def full_path(self) -> PurePath:
         return self._full_path
 
-    def _set_file_size(self, unit: str = 'B') -> int:
-        """ Sets the _size attribute
+    def _set_size(self, unit: str = 'B') -> int:
+        """ Sets the _size attribute with a value that represents the file size.
 
         Args:
             unit (str, optional): The meaurement unit to return the size in.
@@ -126,25 +131,29 @@ class File(ABC):
         Returns:
             int: the file size converted to the specified measurement unit.
         """
-        if self._file.is_file():
-            if unit == 'B':
-                self._size = self._file.stat().st_size
-            elif unit == 'KB':
-                self._size = self._file.stat().st_size / 1000
-            elif unit == 'MB':
-                self._size = self._file.stat().st_size / 1000000
-            elif unit == 'GB':
-                self._size = self._file.stat().st_size / 1000000000
-            else:
-                raise ValueError(
-                    CONSTANTS['MESSAGES']['EXEPTIONS']['VALUE_ERROR'].format(
-                        param='unit',
-                        restr=('it must be equal to some of these values:'
-                               + ' (B, KB, MB, GB)')
+
+        if unit == 'B':
+            self._size = self._file.stat().st_size
+        elif unit == 'KB':
+            self._size = self._file.stat().st_size / 1000
+        elif unit == 'MB':
+            self._size = self._file.stat().st_size / 1000000
+        elif unit == 'GB':
+            self._size = self._file.stat().st_size / 1000000000
+        else:
+            raise ValueError(
+                CONSTANTS['MESSAGES']['EXEPTIONS']['VALUE_ERROR'].format(
+                    param='unit',
+                    restr=(
+                        'it must be equal to some of these values:'
+                        + ' (B, KB, MB, GB)'
                     )
                 )
-        elif self._file.is_dir():
-            raise 
+            )
+
+    def __check_file_integrity(self):
+        if not self._file.is_file():
+            raise NotAFileError()
 
 
 File('myfile', '~/Documentos', 'txt')
