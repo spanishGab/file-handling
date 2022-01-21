@@ -21,7 +21,8 @@ def create_file(
 
     Args:
         name (str): the file name
-        directory_path (Union[str, PathLike, PurePath, bytes]): the directory where the file muts be created
+        directory_path (Union[str, PathLike, PurePath, bytes]): the directory
+          where the file muts be created
         extension (str): the file extension
 
     Returns:

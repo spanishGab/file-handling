@@ -5,10 +5,8 @@ from pathlib import PurePath, Path
 from typing import Union
 
 from datetime import datetime
-from datetime import date
-from datetime import time
 
-from .common.constants import CONSTANTS
+from .common.constants import EXCEPTIONS
 
 
 class NotAFileError(Exception):
@@ -31,7 +29,10 @@ class File(ABC):
         self.directory_path = directory_path
         self.extension = extension
 
-        self._full_name = f'{self.name}.{self.extension}'
+        if self.extension:
+            self._full_name = f'{self.name}.{self.extension}'
+        else:
+            self._full_name = self.name
 
         self._file = Path(os.path.join(self.directory_path,
                                        self.full_name))
@@ -53,7 +54,7 @@ class File(ABC):
             self.__name = None
         else:
             raise TypeError(
-                CONSTANTS['MESSAGES']['EXCEPTIONS']['TYPE_ERROR'].format(
+                EXCEPTIONS.MESSAGES.TYPE_ERROR.format(
                     param='name', tp=str, inst=type(name)
                 )
             )
@@ -73,7 +74,7 @@ class File(ABC):
             self.__directory_path = None
         else:
             raise TypeError(
-                CONSTANTS['MESSAGES']['EXCEPTIONS']['TYPE_ERROR'].format(
+                EXCEPTIONS.MESSAGES.TYPE_ERROR.format(
                     param='directory_path',
                     tp=Union[str, PathLike, PurePath, bytes],
                     inst=type(directory_path)
@@ -92,7 +93,7 @@ class File(ABC):
             self.__extension = None
         else:
             raise TypeError(
-                CONSTANTS['MESSAGES']['EXCEPTIONS']['TYPE_ERROR'].format(
+                EXCEPTIONS.MESSAGES.TYPE_ERROR.format(
                     param='extension', tp=str, inst=type(extension)
                 )
             )
@@ -104,14 +105,6 @@ class File(ABC):
     @property
     def last_modification_datetime(self) -> datetime:
         return self._last_modification_datetime
-
-    @property
-    def last_modification_date(self) -> date:
-        return self._last_modification_date
-
-    @property
-    def last_modification_time(self) -> time:
-        return self._last_modification_time
 
     @property
     def full_name(self) -> str:
@@ -142,7 +135,7 @@ class File(ABC):
             self._size = self._file.stat().st_size / 1000000000
         else:
             raise ValueError(
-                CONSTANTS['MESSAGES']['EXEPTIONS']['VALUE_ERROR'].format(
+                EXCEPTIONS.MESSAGES.VALUE_ERROR.format(
                     param='unit',
                     restr=(
                         'it must be equal to some of these values:'
@@ -150,6 +143,9 @@ class File(ABC):
                     )
                 )
             )
+
+    def _set_last_modification_datetime(self):
+        self._last_modification_datetime = datetime.fromtimestamp()
 
     def __check_file_integrity(self):
         if not self._file.is_file():
