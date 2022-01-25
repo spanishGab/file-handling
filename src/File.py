@@ -1,12 +1,11 @@
 from abc import ABC
+from datetime import datetime
 import os
 from os import PathLike
 from pathlib import PurePath, Path
 from typing import Union
 
-from datetime import datetime
-
-from .common.constants import EXCEPTIONS
+from .common.constants import EXCEPTIONS, DATETIME_INFO
 
 
 class NotAFileError(Exception):
@@ -99,14 +98,6 @@ class File(ABC):
             )
 
     @property
-    def size(self) -> int:
-        return self._size
-
-    @property
-    def last_modification_datetime(self) -> datetime:
-        return self._last_modification_datetime
-
-    @property
     def full_name(self) -> str:
         return self._full_name
 
@@ -114,42 +105,24 @@ class File(ABC):
     def full_path(self) -> PurePath:
         return self._full_path
 
-    def _set_size(self, unit: str = 'B') -> int:
-        """ Sets the _size attribute with a value that represents the file size.
+    def size_in_bytes(self) -> int:
+        return self._file.stat().st_size
 
-        Args:
-            unit (str, optional): The meaurement unit to return the size in.
-              Defaults to 'B'. Possible values: (B, KB, MB, GB)
+    def size_in_kilobytes(self) -> int:
+        return self._file.stat().st_size / 1000
 
-        Returns:
-            int: the file size converted to the specified measurement unit.
-        """
+    def size_in_megabytes(self) -> int:
+        return self._file.stat().st_size / 1000000
 
-        if unit == 'B':
-            self._size = self._file.stat().st_size
-        elif unit == 'KB':
-            self._size = self._file.stat().st_size / 1000
-        elif unit == 'MB':
-            self._size = self._file.stat().st_size / 1000000
-        elif unit == 'GB':
-            self._size = self._file.stat().st_size / 1000000000
-        else:
-            raise ValueError(
-                EXCEPTIONS.MESSAGES.VALUE_ERROR.format(
-                    param='unit',
-                    restr=(
-                        'it must be equal to some of these values:'
-                        + ' (B, KB, MB, GB)'
-                    )
-                )
-            )
+    def size_in_gigabytes(self) -> int:
+        return self._file.stat().st_size / 1000000000
 
-    def _set_last_modification_datetime(self):
-        self._last_modification_datetime = datetime.fromtimestamp()
+    def last_modification(self) -> datetime:
+        return datetime.fromtimestamp(
+            self._file.stat().st_mtime,
+            DATETIME_INFO.LOCAL_TIMEZONE
+        )
 
     def __check_file_integrity(self):
         if not self._file.is_file():
             raise NotAFileError()
-
-
-File('myfile', '~/Documentos', 'txt')
