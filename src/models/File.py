@@ -1,29 +1,24 @@
 from abc import ABC
 from datetime import datetime
-import os
 from os import PathLike
 from pathlib import PurePath, Path
 from typing import Union
 
-from .common.constants import EXCEPTIONS, DATETIME_INFO
+from ..common.constants import CUSTOM_EXCEPTIONS, DATETIME_INFO
+from ..errors.exceptions import NotAFileException
 
 
-class NotAFileError(Exception):
-    def __init__(
-        self,
-        message: str = "The given file name doesn't repressent a file."
-    ):
-        super().__init__(message)
+def _check_file_integrity(file):
+    if not file.is_file():
+        raise NotAFileException()
 
 
 class File(ABC):
 
-    def __init__(
-        self,
-        name: str,
-        directory_path: Union[str, PathLike, PurePath, bytes],
-        extension: str = ''
-    ):
+    def __init__(self,
+                 name: str,
+                 directory_path: Union[str, PathLike, PurePath, bytes],
+                 extension: str = ''):
         self.name = name
         self.directory_path = directory_path
         self.extension = extension
@@ -33,11 +28,10 @@ class File(ABC):
         else:
             self._full_name = self.name
 
-        self._file = Path(os.path.join(self.directory_path,
-                                       self.full_name))
+        self._file = Path(self.directory_path).joinpath(self.full_name)
 
         if self._file.exists():
-            self.__check_file_integrity()
+            _check_file_integrity(self._file)
 
         self._full_path = self._file.absolute()
 
@@ -53,7 +47,7 @@ class File(ABC):
             self.__name = None
         else:
             raise TypeError(
-                EXCEPTIONS.MESSAGES.TYPE_ERROR.format(
+                CUSTOM_EXCEPTIONS.MESSAGES.TYPE_ERROR.format(
                     param='name', tp=str, inst=type(name)
                 )
             )
@@ -73,7 +67,7 @@ class File(ABC):
             self.__directory_path = None
         else:
             raise TypeError(
-                EXCEPTIONS.MESSAGES.TYPE_ERROR.format(
+                CUSTOM_EXCEPTIONS.MESSAGES.TYPE_ERROR.format(
                     param='directory_path',
                     tp=Union[str, PathLike, PurePath, bytes],
                     inst=type(directory_path)
@@ -92,7 +86,7 @@ class File(ABC):
             self.__extension = None
         else:
             raise TypeError(
-                EXCEPTIONS.MESSAGES.TYPE_ERROR.format(
+                CUSTOM_EXCEPTIONS.MESSAGES.TYPE_ERROR.format(
                     param='extension', tp=str, inst=type(extension)
                 )
             )
@@ -117,12 +111,19 @@ class File(ABC):
     def size_in_gigabytes(self) -> int:
         return self._file.stat().st_size / 1000000000
 
-    def last_modification(self) -> datetime:
-        return datetime.fromtimestamp(
-            self._file.stat().st_mtime,
-            DATETIME_INFO.LOCAL_TIMEZONE
+    def last_modification(
+        self, timezone=None
+    ) -> datetime:
+        last_modification = datetime.fromtimestamp(self._file.stat().st_mtime,
+                                                   timezone)
+
+        last_modification = last_modification.strftime(
+            DATETIME_INFO.FULL_DATETIME_FORMAT
         )
 
-    def __check_file_integrity(self):
-        if not self._file.is_file():
-            raise NotAFileError()
+        last_modification = datetime.strptime(
+            last_modification,
+            DATETIME_INFO.FULL_DATETIME_FORMAT
+        )
+
+        return last_modification
